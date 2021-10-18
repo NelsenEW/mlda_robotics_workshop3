@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<launch>
+
+  <arg name="input_topic" default="image_raw"/>
+  <arg name="output_topic" default="inference"/>
+  <arg name="bbox_topic" default="bbox_array"/>
+  <arg name="model_path" default="$(find turtlebot3_detection)/src/turtlebot3_detection/robot_model/best.pt"/>
+  <node pkg="turtlebot3_detection" type="inference" name="turtlebot3_inference" output="screen">
+    <param name="model_path" type="str" value="$(arg model_path)"/>
+    <param name="input_topic" type="str" value="$(arg input_topic)"/>
+    <param name="output_topic" type="str" value="$(arg output_topic)"/>
+    <param name="bbox_topic" type="str" value="$(arg bbox_topic)"/>
+  </node>
+</launch>
