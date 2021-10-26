@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<launch>
+    <include file="$(find turtlebot3_bringup)/launch/turtlebot3_single_pillar.launch"/>
+
+    <node name="turtlebot_controller" pkg="turtlebot3_controller" type="turtlebot3_controller" output="screen">
+        <rosparam file="$(find turtlebot3_controller)/config/config.yaml" command="load"/>
+    </node>
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find turtlebot3_controller)/rviz/waffle.rviz" required="true" /> 
+</launch>

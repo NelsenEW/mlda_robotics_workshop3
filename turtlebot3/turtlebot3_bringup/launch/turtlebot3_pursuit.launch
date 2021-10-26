@@ -1,0 +1,68 @@
+<?xml version="1.0"?>
+<launch>
+
+  <arg name="model" default="$(env TURTLEBOT3_MODEL)" doc="model type [burger, waffle, waffle_pi]"/>
+  <arg name="world" default="$(find turtlebot3_controller)/worlds/multi_pillar.world"/>
+  <arg name="turtlebot_1_name" default="turtlebot_1"/>
+  <arg name="x_pos_1" default="0.0"/>
+  <arg name="y_pos_1" default="0.0"/>
+  <arg name="z_pos_1" default="0.0"/>
+  <arg name="turtlebot_2_name" default="turtlebot_2"/>
+  <arg name="x_pos_2" default="1.0"/>
+  <arg name="y_pos_2" default="0.0"/>
+  <arg name="z_pos_2" default="0.0"/>
+
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(arg world)"/>
+    <arg name="paused" value="false"/>
+    <arg name="use_sim_time" value="true"/>
+    <arg name="gui" value="true"/>
+    <arg name="headless" value="false"/>
+    <arg name="debug" value="false"/>
+  </include>
+
+
+  <group ns="$(arg turtlebot_1_name)">
+    <param name="robot_description" command="$(find xacro)/xacro --inorder $(find turtlebot3_description)/urdf/turtlebot3_$(arg model).urdf.xacro
+                                             camera_topic_ns:=$(arg turtlebot_1_name)/camera" />
+    <param name="tf_prefix" type="str" value="$(arg turtlebot_1_name)"/>
+
+    <!-- <node name="teleop_twist_keyboard" pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py" output="screen" launch-prefix="xterm -e" />
+    <node pkg="turtlebot3_detection" type="node_to_jpg" name="node_to_jpg">
+      <param name="input_topic" type="str" value="camera/rgb/image_raw"/>
+    </node> -->
+
+    <node pkg="gazebo_ros" type="spawn_model" name="spawn_urdf"
+          args="-urdf -model $(arg turtlebot_1_name)_model -x $(arg x_pos_1) -y $(arg y_pos_1) -z $(arg z_pos_1) -param robot_description"/>
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+    <node pkg="tf" type="static_transform_publisher" name="tf_broadcaster"  args="0 0 0 0 0 0 /map /$(arg turtlebot_1_name)/odom 100"/>
+    <include file="$(find turtlebot3_detection)/launch/turtlebot3_detection.launch">
+      <arg name="input_topic" value="camera/rgb/image_raw"/>
+      <arg name="output_topic" value="camera/rgb/image_inference"/>
+      <arg name="bbox_topic" value="/$(arg turtlebot_1_name)/bbox_array"/>
+    </include>
+
+    <node name="turtlebot_controller" pkg="turtlebot3_controller" type="turtlebot3_controller" output="screen">
+      <param name="subscriber_topic_name" value="/$(arg turtlebot_1_name)/bbox_array"/>
+      <param name="publisher_topic_name" value="/$(arg turtlebot_1_name)/cmd_vel"/>
+      <rosparam file="$(find turtlebot3_controller)/config/config.yaml" command="load"/>
+    </node>
+  </group> 
+
+
+  <group ns="$(arg turtlebot_2_name)">
+    <param name="robot_description" command="$(find xacro)/xacro --inorder $(find turtlebot3_description)/urdf/turtlebot3_$(arg model).urdf.xacro
+                                             camera_topic_ns:=$(arg turtlebot_2_name)/camera" />
+    <param name="tf_prefix" type="str" value="$(arg turtlebot_2_name)"/>
+    
+    <node name="teleop_twist_keyboard" pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py" output="screen" launch-prefix="xterm -e">
+      <param name="speed" value="0.4"/>
+    </node>
+    <node pkg="gazebo_ros" type="spawn_model" name="spawn_urdf"
+          args="-urdf -model $(arg turtlebot_2_name)_model -x $(arg x_pos_2) -y $(arg y_pos_2) -z $(arg z_pos_2) -param robot_description"/>
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+    <node pkg="tf" type="static_transform_publisher" name="tf_broadcaster"  args="0 0 0 0 0 0 /map /$(arg turtlebot_2_name)/odom 100"/>
+  </group>
+  <node name="rviz" pkg="rviz" type="rviz"  args="-d $(find turtlebot3_controller)/rviz/turtlebot_pursuit.rviz" />
+
+</launch>
